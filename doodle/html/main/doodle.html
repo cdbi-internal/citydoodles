@@ -1,1 +1,545 @@
+<!-- Inicio Widget Galería Navidad Glassmorphism -->
+<div id="christmas-glass-widget">
+    
+    <!-- Carga de fuentes y librerías necesarias -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
 
+    <style>
+        /* Scoped CSS para no afectar el resto de WordPress */
+        #christmas-glass-widget {
+            /* Variables locales */
+            --widget-height: 500px;
+            --cursor-x: 50%;
+            --cursor-y: 50%;
+            --bg-dark-green: #022c22;
+            --bg-dark-cyan: #083344;
+            --accent-color: #2dd4bf;
+
+            position: relative;
+            width: 100%;
+            height: var(--widget-height);
+            background: radial-gradient(circle at center, var(--bg-dark-cyan), var(--bg-dark-green));
+            overflow: hidden;
+            font-family: 'Montserrat', sans-serif;
+            color: white;
+            perspective: 1000px;
+            user-select: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        #christmas-glass-widget * {
+            box-sizing: border-box;
+        }
+
+        /* --- LOADING SHAPESHIFTER --- */
+        .cg-preloader-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #083344, #022c22);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .cg-shape-shifter {
+            width: 80px;
+            height: 80px;
+            /* Gradiente Celeste a Verde Lima */
+            background: linear-gradient(45deg, #00BFFF, #32CD32); 
+            background-size: 200% 200%;
+            animation: cg-morphing 3s infinite ease-in-out, cg-gradientMove 3s ease infinite;
+            box-shadow: 0 0 20px rgba(50, 205, 50, 0.4);
+        }
+
+        /* Animación Morphing */
+        @keyframes cg-morphing {
+            0% { border-radius: 50%; transform: rotate(0deg); }
+            25% { border-radius: 10%; transform: rotate(90deg); }
+            50% { border-radius: 50% 20%; transform: rotate(180deg); }
+            75% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; transform: rotate(270deg); }
+            100% { border-radius: 50%; transform: rotate(360deg); }
+        }
+
+        /* Animación Gradiente */
+        @keyframes cg-gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Implosión */
+        .cg-preloader-overlay.implode .cg-shape-shifter {
+            transform: scale(0) rotate(720deg);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.600, -0.280, 0.735, 0.045);
+        }
+
+        .cg-preloader-overlay.implode {
+            opacity: 0;
+            visibility: hidden;
+            transition-delay: 0.3s;
+        }
+
+        /* Spotlight */
+        .cg-spotlight-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: radial-gradient(
+                400px circle at var(--cursor-x) var(--cursor-y), 
+                rgba(255, 255, 255, 0.15), 
+                transparent 40%
+            );
+            z-index: 1;
+            mix-blend-mode: overlay;
+        }
+
+        /* Orbes */
+        .cg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            z-index: 0;
+            opacity: 0.6;
+            animation: cg-float 10s infinite ease-in-out;
+        }
+        .cg-orb-1 { width: 300px; height: 300px; background: #0d9488; top: -10%; left: -10%; }
+        .cg-orb-2 { width: 350px; height: 350px; background: #064e3b; bottom: -20%; right: -10%; animation-delay: -5s; }
+        .cg-orb-3 { width: 200px; height: 200px; background: #115e59; top: 40%; left: 40%; animation-delay: -2s; opacity: 0.4; }
+
+        @keyframes cg-float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -30px); }
+        }
+
+        /* Estructura Principal */
+        .cg-main-content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            opacity: 0; /* Oculto hasta que cargue */
+            transition: opacity 0.8s ease;
+        }
+        
+        .cg-loaded .cg-main-content {
+            opacity: 1;
+        }
+
+        /* Notificación */
+        .cg-notification {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(6, 78, 59, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            color: #ccfbf1;
+            box-shadow: 0 0 15px rgba(20, 184, 166, 0.4);
+            animation: cg-slideInAndFade 6s forwards;
+            position: absolute;
+            top: 15px;
+            z-index: 50;
+            animation-delay: 0.5s; /* Esperar al loader */
+        }
+
+        .cg-dot-pulse {
+            width: 6px;
+            height: 6px;
+            background-color: #2dd4bf;
+            border-radius: 50%;
+            animation: cg-pulse 2s infinite;
+        }
+
+        @keyframes cg-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        @keyframes cg-slideInAndFade {
+            0% { opacity: 0; transform: translateY(-10px); }
+            10% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); visibility: hidden;}
+        }
+
+        /* Textos */
+        .cg-title-container {
+            text-align: center;
+            z-index: 20;
+            pointer-events: none;
+            margin-top: 35px;
+        }
+        .cg-title {
+            font-family: 'Cinzel', serif;
+            font-size: 2rem;
+            line-height: 1.1;
+            font-weight: 700;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            margin: 0;
+        }
+        .cg-subtitle { font-size: 1.2rem; color: #99f6e4; font-weight: 300; }
+        .cg-instruction {
+            font-size: 0.65rem; color: #5eead4; margin-top: 8px;
+            text-transform: uppercase; letter-spacing: 0.2em; opacity: 0.7;
+        }
+
+        /* Carrusel */
+        .cg-carousel-container {
+            position: absolute;
+            top: 58%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            perspective: 800px;
+        }
+
+        .cg-card {
+            position: absolute;
+            width: 280px;
+            height: 180px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.5);
+            transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform-style: preserve-3d;
+            cursor: pointer; /* Indicar clicable */
+            flex-direction: column;
+        }
+
+        /* Badge de Usuario */
+        .cg-username {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #ccfbf1;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 5;
+            transition: all 0.3s ease;
+        }
+
+        .cg-card:hover .cg-username {
+            background: rgba(45, 212, 191, 0.8); /* Teal hover */
+            color: #022c22;
+        }
+
+        /* Estado "Sin Imagen" */
+        .cg-card.no-image .cg-username {
+            position: static; /* Centrado si no hay imagen */
+            bottom: auto;
+            left: auto;
+            transform: scale(1.5);
+            background: transparent;
+            border: none;
+            text-shadow: 0 0 10px rgba(45, 212, 191, 0.6);
+        }
+        
+        /* Imagen */
+        .cg-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .cg-card.no-image img {
+            display: none;
+        }
+
+        /* Indicadores */
+        .cg-indicators {
+            position: absolute; bottom: 20px; display: flex; gap: 10px; z-index: 20;
+        }
+        .cg-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .cg-dot.active {
+            background: var(--accent-color); transform: scale(1.2); box-shadow: 0 0 8px var(--accent-color);
+        }
+
+        /* Nieve */
+        .cg-snowflake {
+            position: absolute; color: #fff; font-size: 1em; font-family: Arial;
+            text-shadow: 0 0 1px #000; z-index: 2; pointer-events: none;
+        }
+        @keyframes cg-snowfall {
+            0% { transform: translateY(-10px) translateX(0); opacity: 0.8;}
+            100% { transform: translateY(var(--widget-height)) translateX(20px); opacity: 0;}
+        }
+
+        @media (max-width: 600px) {
+            #christmas-glass-widget { height: 450px; }
+            .cg-title { font-size: 1.5rem; }
+            .cg-subtitle { font-size: 1rem; }
+            .cg-card { width: 220px; height: 140px; }
+            .cg-carousel-container { top: 60%; }
+        }
+    </style>
+
+    <!-- LOADING OVERLAY -->
+    <div id="cg-preloader" class="cg-preloader-overlay">
+        <div class="cg-shape-shifter"></div>
+    </div>
+
+    <!-- Orbes de fondo -->
+    <div class="cg-orb cg-orb-1"></div>
+    <div class="cg-orb cg-orb-2"></div>
+    <div class="cg-orb cg-orb-3"></div>
+
+    <div id="cg-spotlight" class="cg-spotlight-overlay"></div>
+
+    <div class="cg-main-content">
+        <!-- Notificación -->
+        <div class="cg-notification">
+            <span class="cg-dot-pulse"></span>
+            Videos Exclusivos
+        </div>
+
+        <!-- Título -->
+        <div class="cg-title-container">
+            <h2 class="cg-title">Celebra la navidad</h2>
+            <span class="cg-subtitle">Mira nuestros videos</span>
+            <p class="cg-instruction">&larr; Click para ver video &rarr;</p>
+        </div>
+
+        <!-- Carrusel -->
+        <div class="cg-carousel-container" id="cg-carousel">
+            
+            <!-- Carta 1 -->
+            <div class="cg-card" data-index="0" data-video="https://www.facebook.com/facebook/videos/10153231379946729/">
+                <img src="https://images.unsplash.com/photo-1544967082-d9d3fdd01a15?q=80&w=600&auto=format&fit=crop" alt="Video 1">
+                <div class="cg-username">@navidad_magica</div>
+            </div>
+
+            <!-- Carta 2 -->
+            <div class="cg-card" data-index="1" data-video="https://www.facebook.com/facebook/videos/10153231379946729/">
+                <img src="https://images.unsplash.com/photo-1512474932049-78ac69ede12c?q=80&w=600&auto=format&fit=crop" alt="Video 2">
+                <div class="cg-username">@regalos_top</div>
+            </div>
+
+            <!-- Carta 3: SIN IMAGEN (Fallback de texto) -->
+            <div class="cg-card no-image" data-index="2" data-video="https://www.facebook.com/facebook/videos/10153231379946729/">
+                <!-- Sin etiqueta img -->
+                <div class="cg-username">@sin_foto_user</div>
+            </div>
+
+            <!-- Carta 4 -->
+            <div class="cg-card" data-index="3" data-video="https://www.facebook.com/facebook/videos/10153231379946729/">
+                <img src="https://images.unsplash.com/photo-1576919228636-1e58f3f5a730?q=80&w=600&auto=format&fit=crop" alt="Video 4">
+                <div class="cg-username">@cena_familiar</div>
+            </div>
+
+            <!-- Carta 5 -->
+            <div class="cg-card" data-index="4" data-video="https://www.facebook.com/facebook/videos/10153231379946729/">
+                <img src="https://images.unsplash.com/photo-1514300469614-722659e9447e?q=80&w=600&auto=format&fit=crop" alt="Video 5">
+                <div class="cg-username">@luces_brillantes</div>
+            </div>
+
+        </div>
+
+        <div class="cg-indicators">
+            <div class="cg-dot active" data-index="0"></div>
+            <div class="cg-dot" data-index="1"></div>
+            <div class="cg-dot" data-index="2"></div>
+            <div class="cg-dot" data-index="3"></div>
+            <div class="cg-dot" data-index="4"></div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const widget = document.getElementById('christmas-glass-widget');
+            
+            // --- 0. Loading Logic ---
+            const preloader = document.getElementById('cg-preloader');
+            
+            // Simular carga (puedes cambiar esto por window.onload real si prefieres)
+            setTimeout(() => {
+                preloader.classList.add('implode');
+                widget.classList.add('cg-loaded');
+                
+                // Remover del DOM después de la animación para liberar memoria
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 800);
+            }, 2500); // 2.5 segundos de carga para ver la animación
+
+            // --- 1. Spotlight Effect ---
+            widget.addEventListener('mousemove', e => {
+                const rect = widget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                widget.style.setProperty('--cursor-x', `${x}px`);
+                widget.style.setProperty('--cursor-y', `${y}px`);
+            });
+
+            // --- 2. Snow Effect ---
+            function createSnowflake() {
+                if(!document.getElementById('christmas-glass-widget')) return;
+                const snowflake = document.createElement('div');
+                snowflake.classList.add('cg-snowflake');
+                snowflake.innerHTML = '❄';
+                snowflake.style.left = Math.random() * 100 + '%';
+                snowflake.style.opacity = Math.random();
+                snowflake.style.fontSize = (Math.random() * 8 + 8) + 'px';
+                snowflake.style.animation = `cg-snowfall ${Math.random() * 5 + 5}s linear infinite`;
+                snowflake.style.color = Math.random() > 0.5 ? '#ccfbf1' : '#ffffff'; 
+                widget.appendChild(snowflake);
+                setTimeout(() => { snowflake.remove(); }, 10000);
+            }
+            setInterval(createSnowflake, 600);
+
+            // --- 3. Carousel Logic ---
+            const container = document.getElementById('cg-carousel');
+            const cards = Array.from(container.querySelectorAll('.cg-card'));
+            const dots = Array.from(widget.querySelectorAll('.cg-dot'));
+            const totalCards = cards.length;
+            let currentIndex = 0;
+
+            function updateCarousel() {
+                cards.forEach((card, i) => {
+                    let offset = (i - currentIndex);
+                    if (offset > totalCards / 2) offset -= totalCards;
+                    if (offset < -totalCards / 2) offset += totalCards;
+
+                    if (offset === 0) {
+                        // Central
+                        card.style.transform = `translateX(0) scale(1) translateZ(50px)`;
+                        card.style.opacity = '1';
+                        card.style.zIndex = '10';
+                        card.style.filter = 'brightness(1.1) saturate(1.1)';
+                        card.style.borderColor = 'rgba(255,255,255,0.8)';
+                        card.classList.add('active-card');
+                    } else {
+                        // Lateral
+                        const absOffset = Math.abs(offset);
+                        const tx = offset * 60;
+                        const scale = 1 - (absOffset * 0.2); 
+                        const zIndex = 10 - absOffset;
+                        const opacity = absOffset > 2 ? 0 : 0.6;
+                        const blur = absOffset * 2;
+                        
+                        card.style.transform = `translateX(${tx}%) scale(${scale}) translateZ(0)`;
+                        card.style.opacity = opacity;
+                        card.style.zIndex = zIndex;
+                        card.style.filter = `brightness(0.6) blur(${blur}px)`;
+                        card.style.borderColor = 'rgba(255,255,255,0.1)';
+                        card.classList.remove('active-card');
+                    }
+                });
+                dots.forEach((dot, index) => dot.classList.toggle('active', index === currentIndex));
+            }
+
+            function nextCard() { currentIndex = (currentIndex + 1) % totalCards; updateCarousel(); }
+            function prevCard() { currentIndex = (currentIndex - 1 + totalCards) % totalCards; updateCarousel(); }
+            function goToCard(index) { currentIndex = index; updateCarousel(); }
+
+            // --- 4. Touch/Mouse Swipe & Click Navigation ---
+            let startX = 0;
+            let isDragging = false;
+            let isClick = true; // Flag para distinguir drag de click
+            const threshold = 30;
+
+            container.addEventListener('mousedown', (e) => {
+                startX = e.clientX;
+                isDragging = true;
+                isClick = true;
+                container.style.cursor = 'grabbing';
+            });
+
+            container.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+                isClick = true;
+            }, {passive: true});
+
+            const handleMoveEnd = (endX) => {
+                if (!isDragging) return;
+                isDragging = false;
+                container.style.cursor = 'grab';
+                const diff = startX - endX;
+
+                if (Math.abs(diff) > threshold) {
+                    isClick = false; // Fue un arrastre, no un click
+                    if (diff > 0) nextCard();
+                    else prevCard();
+                }
+            };
+
+            window.addEventListener('mouseup', (e) => {
+                if (isDragging) handleMoveEnd(e.clientX);
+            });
+            window.addEventListener('touchend', (e) => {
+                if (isDragging) handleMoveEnd(e.changedTouches[0].clientX);
+            });
+
+            // Click Handler para las cartas
+            cards.forEach((card, index) => {
+                card.addEventListener('click', (e) => {
+                    // Si hubo arrastre, ignoramos el click
+                    if (!isClick) return;
+
+                    let diff = index - currentIndex;
+                    if (diff > totalCards / 2) diff -= totalCards;
+                    if (diff < -totalCards / 2) diff += totalCards;
+                    
+                    if (diff === 0) {
+                        // Click en la carta activa -> Abrir video
+                        const videoUrl = card.getAttribute('data-video');
+                        if (videoUrl) {
+                            window.open(videoUrl, '_blank');
+                        }
+                    } else {
+                        // Click en carta lateral -> Navegar a ella
+                        currentIndex = index;
+                        updateCarousel();
+                    }
+                });
+            });
+
+            // Dots Click
+            dots.forEach(dot => {
+                dot.addEventListener('click', () => {
+                    goToCard(parseInt(dot.getAttribute('data-index')));
+                });
+            });
+
+            updateCarousel();
+        })();
+    </script>
+</div>
+<!-- Fin Widget Galería -->
